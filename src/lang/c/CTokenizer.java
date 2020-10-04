@@ -65,55 +65,149 @@ public class CTokenizer extends Tokenizer<CToken, CParseContext> {
 		int  startCol = colNo;
 		StringBuffer text = new StringBuffer();
 
-		int state = 0;
+		//int state = 0;
+		Status state = Status.INIT;
 		boolean accept = false;
 		while (!accept) {
 			switch (state) {
-			case 0:					// 初期状態
-				ch = readChar();
-				if (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r') {
-				} else if (ch == (char) -1) {	// EOF
-					startCol = colNo - 1;
-					state = 1;
-				} else if (ch >= '0' && ch <= '9') {
+				case INIT:					// 初期状態
+					ch = readChar();
+					if (ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r') {
+						break;
+					} else if (ch == (char) -1) {	// EOF
+						startCol = colNo - 1;
+						state = Status.EOF;
+						break;
+					}/* else if (ch >= '0' && ch <= '9') {
+						startCol = colNo - 1;
+						text.append(ch);
+						state = State.DECIMAL;
+					} else if (ch == '+') {
+						startCol = colNo - 1;
+						text.append(ch);
+						state = State.PLUS.EOF;
+					} else {			// ヘンな文字を読んだ
+						startCol = colNo - 1;
+						text.append(ch);
+						state = State.ILL;
+					}*/
+
 					startCol = colNo - 1;
 					text.append(ch);
-					state = 3;
-				} else if (ch == '+') {
-					startCol = colNo - 1;
-					text.append(ch);
-					state = 4;
-				} else {			// ヘンな文字を読んだ
-					startCol = colNo - 1;
-					text.append(ch);
-					state = 2;
-				}
-				break;
-			case 1:					// EOFを読んだ
-				tk = new CToken(CToken.TK_EOF, lineNo, startCol, "end_of_file");
-				accept = true;
-				break;
-			case 2:					// ヘンな文字を読んだ
-				tk = new CToken(CToken.TK_ILL, lineNo, startCol, text.toString());
-				accept = true;
-				break;
-			case 3:					// 数（10進数）の開始
-				ch = readChar();
-				if (Character.isDigit(ch)) {
-					text.append(ch);
-				} else {
-					// 数の終わり
-					backChar(ch);	// 数を表さない文字は戻す（読まなかったことにする）
-					tk = new CToken(CToken.TK_NUM, lineNo, startCol, text.toString());
+					state = switch(ch){
+						case '+' -> Status.PLUS;
+						case '-' -> Status.MINUS;
+						case '/' -> Status.SLASH;
+						default -> {
+							if (ch >= '0' && ch <= '9') {
+								yield Status.DECIMAL;
+							} else {			// ヘンな文字を読んだ
+								yield Status.ILL;
+							}
+						}
+					};
+
+					break;
+
+				case EOF:					// EOFを読んだ
+					tk = new CToken(CToken.TK_EOF, lineNo, startCol, "end_of_file");
 					accept = true;
-				}
-				break;
-			case 4:					// +を読んだ
-				tk = new CToken(CToken.TK_PLUS, lineNo, startCol, "+");
-				accept = true;
-				break;
+					break;
+				case ILL:					// ヘンな文字を読んだ
+					tk = new CToken(CToken.TK_ILL, lineNo, startCol, text.toString());
+					accept = true;
+					break;
+				case DECIMAL:					// 数（10進数）の開始
+					ch = readChar();
+					if (Character.isDigit(ch)) {
+						text.append(ch);
+					} else {
+						// 数の終わり
+						backChar(ch);	// 数を表さない文字は戻す（読まなかったことにする）
+						tk = new CToken(CToken.TK_NUM, lineNo, startCol, text.toString());
+						accept = true;
+					}
+					break;
+				case PLUS:					// +を読んだ
+					tk = new CToken(CToken.TK_PLUS, lineNo, startCol, "+");
+					accept = true;
+					break;
+				case MINUS:					// -を読んだ
+					tk = new CToken(CToken.TK_MINUS, lineNo, startCol, "-");
+					accept = true;
+					break;
+				case SLASH:					// /を読んだ
+					//これがどんな意味の/かわからないからもう一文字読んで判断する必要がある
+					ch = readChar();
+					state = switch(ch){
+						case '*' :
+							yield Status.B_COMMENT;
+						case '/' :
+							yield Status.L_COMMENT;
+						default:
+							backChar(ch);
+							yield Status.DIVIDE;
+					};
+					break;
+				case L_COMMENT:				// //を読んだ
+					ch = readChar();
+					state = switch(ch){
+						case '\n':						//改行したらコメントは終了して普通の文字列受け取り
+							text.delete(0, text.length());
+							yield Status.INIT;
+						case (char) -1:					//EOFはファイルの終わり
+							yield Status.EOF;
+						default:
+							yield Status.L_COMMENT;		//コメントはまだ続く
+					};
+					break;
+				case B_COMMENT:			// /*を読んだ
+					ch = readChar();
+					state = switch(ch){
+						case (char) -1:					//EOFはファイルの終わりだからおかしい
+							yield Status.ILL;
+						case '*':						// *だからコメントが続くかもしれないし次でおわるかもしれない
+							yield Status.B_COMMENT_END;
+						default:
+							yield Status.B_COMMENT;		//コメントはまだ続く
+					};
+					break;
+				case B_COMMENT_END:			// /*を読んだあとに*を読んだ
+					ch = readChar();
+					state = switch(ch){
+						case '/':						// */となったのでコメントはここでおわり
+							text.delete(0, text.length());
+							yield Status.INIT;
+						case (char) -1:					//EOFはファイルの終わりだからおかしい
+							yield Status.ILL;
+						case '*':						// **だからコメントが続くかもしれないし次でおわるかもしれない
+							yield Status.B_COMMENT_END;
+						default:
+							yield Status.B_COMMENT;		//コメントはまだ続く
+					};
+					break;
+				case DIVIDE:				//　割り算としての/を読んだ
+					tk = new CToken(CToken.TK_SLASH, lineNo, startCol, "/");
+					//TODO:ここのトークンはSLASHでいいの？
+					accept = true;
+					break;
+
 			}
 		}
 		return tk;
+	}
+
+	private enum Status{
+		INIT,
+		EOF,
+		ILL,
+		DECIMAL,
+		PLUS,
+		MINUS,
+		SLASH,
+		L_COMMENT,		//行コメント
+		B_COMMENT,		//ブロックコメント
+		B_COMMENT_END,	//ブロックコメントが終わるかもしれない(*を受け取って/を待っている状態)
+		DIVIDE
 	}
 }
