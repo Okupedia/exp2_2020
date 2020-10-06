@@ -86,10 +86,23 @@ class ExpressionAdd extends CParseRule {
 
 	public void semanticCheck(CParseContext pcx) throws FatalErrorException {
 		// 足し算の型計算規則
+		/* CType.javaより
+		T_err		= 0;		// 型エラー
+		T_int		= 1;		// int
+		T_pint	= 2;		// int*
+		 */
+		/*
 		final int s[][] = {
 		//		T_err			T_int
 			{	CType.T_err,	CType.T_err },	// T_err
 			{	CType.T_err,	CType.T_int },	// T_int
+		};
+		 */
+		final int s[][] = {
+		//(rt)		err				int          	pint		  //(lt)
+				{	CType.T_err,	CType.T_err,	CType.T_err	},//err
+				{	CType.T_err,	CType.T_int,	CType.T_err},//int
+				{	CType.T_err,	CType.T_pint,	CType.T_int},//pint
 		};
 		if (left != null && right != null) {
 			left.semanticCheck(pcx);
@@ -97,9 +110,11 @@ class ExpressionAdd extends CParseRule {
 			int lt = left.getCType().getType();		// +の左辺の型
 			int rt = right.getCType().getType();	// +の右辺の型
 			int nt = s[lt][rt];						// 規則による型計算
+			/*
 			if (nt == CType.T_err) {
 				pcx.fatalError(op.toExplainString() + "左辺の型[" + left.getCType().toString() + "]と右辺の型[" + right.getCType().toString() + "]は足せません");
 			}
+			*/
 			this.setCType(CType.getCType(nt));
 			this.setConstant(left.isConstant() && right.isConstant());	// +の左右両方が定数のときだけ定数
 		}
@@ -143,10 +158,16 @@ class ExpressionSub extends CParseRule {
 
 	public void semanticCheck(CParseContext pcx) throws FatalErrorException {
 		// 引き算の型計算規則
-		final int s[][] = {
+		/*final int s[][] = {
 				//		T_err			T_int
 				{	CType.T_err,	CType.T_err },	// T_err
 				{	CType.T_err,	CType.T_int },	// T_int
+		};*/
+		final int s[][] = {
+		//(rt)		err				int          	pint		  //(lr)
+				{	CType.T_err,	CType.T_err,	CType.T_err	},//err
+				{	CType.T_err,	CType.T_int,	CType.T_err	},//int
+				{	CType.T_err,	CType.T_pint,	CType.T_int	},//pint
 		};
 		if (left != null && right != null) {
 			left.semanticCheck(pcx);
@@ -154,8 +175,13 @@ class ExpressionSub extends CParseRule {
 			int lt = left.getCType().getType();		// -の左辺の型
 			int rt = right.getCType().getType();	// -の右辺の型
 			int nt = s[lt][rt];						// 規則による型計算
+
+			System.out.println(
+			op.toExplainString() + "左辺の型[" + left.getCType().toString() + "] : 右辺[" + right.getCType().toString() + "]"
+			);
+
 			if (nt == CType.T_err) {
-				pcx.fatalError(op.toExplainString() + "左辺の型[" + left.getCType().toString() + "]と右辺の型[" + right.getCType().toString() + "]は引けません");
+				pcx.fatalError("左辺[" + left.getCType().toString() + "]と右辺の型[" + right.getCType().toString() + "]は引けません");
 			}
 			this.setCType(CType.getCType(nt));
 			this.setConstant(left.isConstant() && right.isConstant());	// -の左右両方が定数のときだけ定数

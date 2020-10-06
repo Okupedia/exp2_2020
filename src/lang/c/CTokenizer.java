@@ -12,6 +12,7 @@ public class CTokenizer extends Tokenizer<CToken, CParseContext> {
 	private int			lineNo, colNo;
 	private char		backCh;
 	private boolean		backChExist = false;
+	private final int INT_MAX = 0xFFFF;
 
 	public CTokenizer(CTokenRule rule) {
 		this.rule = rule;
@@ -98,15 +99,16 @@ public class CTokenizer extends Tokenizer<CToken, CParseContext> {
 						case '+' -> Status.PLUS;
 						case '-' -> Status.MINUS;
 						case '/' -> Status.SLASH;
+						case '0' -> Status.ZERO;
+						case '&' -> Status.AND;
 						default -> {
-							if (ch >= '0' && ch <= '9') {
+							if (ch >= '1' && ch <= '9') {
 								yield Status.DECIMAL;
 							} else {			// ヘンな文字を読んだ
 								yield Status.ILL;
 							}
 						}
 					};
-
 					break;
 
 				case EOF:					// EOFを読んだ
@@ -118,14 +120,20 @@ public class CTokenizer extends Tokenizer<CToken, CParseContext> {
 					accept = true;
 					break;
 				case DECIMAL:					// 数（10進数）の開始
-					ch = readChar();
+				ch = readChar();
 					if (Character.isDigit(ch)) {
 						text.append(ch);
 					} else {
-						// 数の終わり
-						backChar(ch);	// 数を表さない文字は戻す（読まなかったことにする）
-						tk = new CToken(CToken.TK_NUM, lineNo, startCol, text.toString());
-						accept = true;
+						if(Integer.decode(text.toString()) > INT_MAX) {
+							state = Status.ILL;
+						}else if(ch > '9'){
+							text.append(ch);
+							state = Status.ILL;
+						} else {
+							backChar(ch);	// 数を表さない文字は戻す（読まなかったことにする）
+							tk = new CToken(CToken.TK_NUM, lineNo, startCol, text.toString());
+							accept = true;
+						}
 					}
 					break;
 				case PLUS:					// +を読んだ
@@ -191,7 +199,68 @@ public class CTokenizer extends Tokenizer<CToken, CParseContext> {
 					//TODO:ここのトークンはSLASHでいいの？
 					accept = true;
 					break;
-
+				case ZERO:
+					ch = readChar();
+					text.append(ch);
+					if (ch >= '1' && ch <= '7') {
+						state = Status.OCTAL;
+					}else if(ch == 'x' || ch == 'X'){
+						state = Status.X;
+					}else{
+						backChar(ch);
+						tk = new CToken(CToken.TK_NUM, lineNo, startCol, "0");
+						accept = true;
+					}
+					break;
+				case OCTAL:		//8進数
+					ch = readChar();
+					if (ch >= '1' && ch <= '7') {
+						text.append(ch);
+					} else {
+						// 数の終わり
+						if(Integer.decode(text.toString()) > INT_MAX) {
+							state = Status.ILL;
+						}else if(ch >= '8'){
+							text.append(ch);
+							state = Status.ILL;
+						}else {
+							backChar(ch);	// 数を表さない文字は戻す（読まなかったことにする）
+							tk = new CToken(CToken.TK_NUM, lineNo, startCol, text.toString());
+							accept = true;
+						}
+					}
+					break;
+				case X:
+					ch = Character.toLowerCase(readChar());
+					if (ch >= '1' && ch <= '9' || ch >= 'a' && ch <= 'f' ) {
+						text.append(ch);
+						state = Status.HEXADECIMAL;
+					} else {
+						state = Status.ILL;
+					}
+					break;
+				case HEXADECIMAL:
+					ch = Character.toLowerCase(readChar());
+					if (ch >= '1' && ch <= '9' || ch >= 'a' && ch <= 'f' ) {
+						text.append(ch);
+					} else {
+						// 数の終わり
+						if(Integer.decode(text.toString()) > INT_MAX) {
+							state = Status.ILL;
+						}else if(ch >= 'g'){
+							text.append(ch);
+							state = Status.ILL;
+						} else {
+							backChar(ch);	// 数を表さない文字は戻す（読まなかったことにする）
+							tk = new CToken(CToken.TK_NUM, lineNo, startCol, text.toString());
+							accept = true;
+						}
+					}
+					break;
+				case AND:
+					tk = new CToken(CToken.TK_AND, lineNo, startCol, "&");
+					accept = true;
+					break;
 			}
 		}
 		return tk;
@@ -208,6 +277,11 @@ public class CTokenizer extends Tokenizer<CToken, CParseContext> {
 		L_COMMENT,		//行コメント
 		B_COMMENT,		//ブロックコメント
 		B_COMMENT_END,	//ブロックコメントが終わるかもしれない(*を受け取って/を待っている状態)
-		DIVIDE
+		DIVIDE,
+		ZERO,
+		OCTAL,			//8進数
+		X,
+		HEXADECIMAL,	//16進数
+		AND
 	}
 }
