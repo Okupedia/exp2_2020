@@ -6,20 +6,24 @@ import lang.*;
 import lang.c.*;
 
 public class Factor extends CParseRule {
-	//factor ::= factorAmp | number
+	//factor ::= plusFactor | minusFactor | unsignedFactor
 	private CParseRule factor;
+
 	public Factor(CParseContext pcx) {
 	}
+
 	public static boolean isFirst(CToken tk) {
-		return Number.isFirst(tk) || FactorAmp.isFirst(tk);
+
+		return PlusFactor.isFirst(tk) || MinusFactor.isFirst(tk) || UnsignedFactor.isFirst(tk);
 	}
 
 	public void parse(CParseContext pcx) throws FatalErrorException {
 		// ここにやってくるときは、必ずisFirst()が満たされている
 		CToken tk = pcx.getTokenizer().getCurrentToken(pcx);
 		factor = switch (tk.getType()){
-			case CToken.TK_AND -> new FactorAmp(pcx);
-			default -> new Number(pcx);
+			case CToken.TK_PLUS -> new PlusFactor(pcx);
+			case CToken.TK_MINUS -> new MinusFactor(pcx);
+			default -> new UnsignedFactor(pcx);
 		};
 		factor.parse(pcx);
 	}

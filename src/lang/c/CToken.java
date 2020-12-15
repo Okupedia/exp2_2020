@@ -9,6 +9,8 @@ public class CToken extends SimpleToken {
 	public static final int TK_ASTERISK		= 4;	// *
 	public static final int TK_SLASH		= 5;	// /
 	public static final int TK_AND			= 6;	// &
+	public static final int TK_LPAR			= 7;	// (
+	public static final int TK_RPAR			= 8;	// )
 
 
 

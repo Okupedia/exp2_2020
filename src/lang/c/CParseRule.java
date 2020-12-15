@@ -1,6 +1,7 @@
 package lang.c;
 
-import lang.*;
+import lang.LL1;
+import lang.ParseRule;
 
 public abstract class CParseRule extends ParseRule<CParseContext> implements lang.Compiler<CParseContext>, LL1<CToken> {
 	// この節点の（推測される）型

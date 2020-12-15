@@ -101,6 +101,9 @@ public class CTokenizer extends Tokenizer<CToken, CParseContext> {
 						case '/' -> Status.SLASH;
 						case '0' -> Status.ZERO;
 						case '&' -> Status.AND;
+						case '*' -> Status.MULT;
+						case '(' -> Status.LPAR;
+						case ')' -> Status.RPAR;
 						default -> {
 							if (ch >= '1' && ch <= '9') {
 								yield Status.DECIMAL;
@@ -195,8 +198,8 @@ public class CTokenizer extends Tokenizer<CToken, CParseContext> {
 					};
 					break;
 				case DIVIDE:				//　割り算としての/を読んだ
+					//ch = readChar();
 					tk = new CToken(CToken.TK_SLASH, lineNo, startCol, "/");
-					//TODO:ここのトークンはSLASHでいいの？
 					accept = true;
 					break;
 				case ZERO:
@@ -232,7 +235,7 @@ public class CTokenizer extends Tokenizer<CToken, CParseContext> {
 					break;
 				case X:
 					ch = Character.toLowerCase(readChar());
-					if (ch >= '1' && ch <= '9' || ch >= 'a' && ch <= 'f' ) {
+					if (ch >= '0' && ch <= '9' || ch >= 'a' && ch <= 'f' ) {
 						text.append(ch);
 						state = Status.HEXADECIMAL;
 					} else {
@@ -241,7 +244,7 @@ public class CTokenizer extends Tokenizer<CToken, CParseContext> {
 					break;
 				case HEXADECIMAL:
 					ch = Character.toLowerCase(readChar());
-					if (ch >= '1' && ch <= '9' || ch >= 'a' && ch <= 'f' ) {
+					if (ch >= '0' && ch <= '9' || ch >= 'a' && ch <= 'f' ) {
 						text.append(ch);
 					} else {
 						// 数の終わり
@@ -253,12 +256,26 @@ public class CTokenizer extends Tokenizer<CToken, CParseContext> {
 						} else {
 							backChar(ch);	// 数を表さない文字は戻す（読まなかったことにする）
 							tk = new CToken(CToken.TK_NUM, lineNo, startCol, text.toString());
+							//System.out.println(tk.getText());
 							accept = true;
 						}
 					}
 					break;
 				case AND:
 					tk = new CToken(CToken.TK_AND, lineNo, startCol, "&");
+					accept = true;
+					break;
+				case MULT:				//　 掛け算
+					//ch = readChar();
+					tk = new CToken(CToken.TK_ASTERISK, lineNo, startCol, "*");
+					accept = true;
+					break;
+				case LPAR:
+					tk = new CToken(CToken.TK_LPAR, lineNo, startCol, "(");
+					accept = true;
+					break;
+				case RPAR:
+					tk = new CToken(CToken.TK_RPAR, lineNo, startCol, ")");
 					accept = true;
 					break;
 			}
@@ -282,6 +299,9 @@ public class CTokenizer extends Tokenizer<CToken, CParseContext> {
 		OCTAL,			//8進数
 		X,
 		HEXADECIMAL,	//16進数
-		AND
+		AND,
+		MULT,
+		LPAR,			//左括弧
+		RPAR			//右括弧
 	}
 }
