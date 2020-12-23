@@ -31,13 +31,16 @@ public class PlusFactor extends CParseRule {
             factor.semanticCheck(pcx);
             setCType(factor.getCType());		// number の型をそのままコピー
             setConstant(factor.isConstant());	// number は常に定数
+            //TODO:ポインタにはつけない
         }
     }
 
     public void codeGen(CParseContext pcx) throws FatalErrorException {
         PrintStream o = pcx.getIOContext().getOutStream();
         o.println(";;; plusFactor starts");
-        if (factor != null) { factor.codeGen(pcx); }
+        if (factor != null) {
+            //TODO:そのままスタックに積んでOK
+        }
         o.println(";;; plusFactor completes");
     }
 }

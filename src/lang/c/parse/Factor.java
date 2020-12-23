@@ -13,7 +13,6 @@ public class Factor extends CParseRule {
 	}
 
 	public static boolean isFirst(CToken tk) {
-
 		return PlusFactor.isFirst(tk) || MinusFactor.isFirst(tk) || UnsignedFactor.isFirst(tk);
 	}
 

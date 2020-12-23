@@ -25,7 +25,7 @@ public class UnsignedFactor extends CParseRule {
     public void parse(CParseContext pcx) throws FatalErrorException {
         // ここにやってくるときは、必ずisFirst()が満たされている
         CToken tk = pcx.getTokenizer().getCurrentToken(pcx);
-
+        //System.out.println("this is UnsignedFactor. this token type is " + tk.getType());
         switch(tk.getType()){
             case CToken.TK_LPAR:
                 tk = pcx.getTokenizer().getNextToken(pcx);// (は読み飛ばす
@@ -64,8 +64,8 @@ public class UnsignedFactor extends CParseRule {
 
     public void codeGen(CParseContext pcx) throws FatalErrorException {
         PrintStream o = pcx.getIOContext().getOutStream();
-        o.println(";;; factor starts");
+        o.println(";;; unsigned factor starts");
         if (factor != null) { factor.codeGen(pcx); }
-        o.println(";;; factor completes");
+        o.println(";;; unsigned factor completes");
     }
 }
