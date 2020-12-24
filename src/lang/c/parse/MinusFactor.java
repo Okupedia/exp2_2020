@@ -4,6 +4,7 @@ import lang.FatalErrorException;
 import lang.c.CParseContext;
 import lang.c.CParseRule;
 import lang.c.CToken;
+import lang.c.CType;
 
 import java.io.PrintStream;
 
@@ -22,6 +23,7 @@ public class MinusFactor extends CParseRule {
     public void parse(CParseContext pcx) throws FatalErrorException {
         // ここにやってくるときは、必ずisFirst()が満たされている
         CToken tk = pcx.getTokenizer().getCurrentToken(pcx);
+        tk = pcx.getTokenizer().getNextToken(pcx);
         factor = new UnsignedFactor(pcx);
         factor.parse(pcx);
     }
@@ -29,9 +31,12 @@ public class MinusFactor extends CParseRule {
     public void semanticCheck(CParseContext pcx) throws FatalErrorException {
         if (factor != null) {
             factor.semanticCheck(pcx);
-            setCType(factor.getCType());		// number の型をそのままコピー
-            setConstant(factor.isConstant());	// number は常に定数
+            setCType(factor.getCType());		// unsignedFactorの型をそのままコピー
+            setConstant(factor.isConstant());	// 常に定数
             //TODO:ポインタにはつけない
+            if(factor.getCType().getType()== CType.T_pint){
+                pcx.fatalError("ポインタに符号(-)はつけられません");
+            }
         }
     }
 
@@ -39,8 +44,11 @@ public class MinusFactor extends CParseRule {
         PrintStream o = pcx.getIOContext().getOutStream();
         o.println(";;; factor starts");
         if (factor != null) {
-            //TODO:一つ取り出して0と減算して積み直す　
+            factor.codeGen(pcx);
         }
+        o.println("\tMOV\t#0, R0\t; MinusFactor:減算するための0をレジスタにいれておく");
+        o.println("\tSUB\t-(R6), R0\t; MinusFactor:負値にするために0との減算をする");
+        o.println("\tMOV\tR0, (R6)+\t; MinusFactor:スタックに積み直す");
         o.println(";;; factor completes");
     }
 }
