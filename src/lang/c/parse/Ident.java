@@ -34,7 +34,7 @@ public class Ident extends CParseRule {
             this.setCType(CType.getCType(CType.T_int_arr));
             this.setConstant(false);
         }
-        var identString = ident.toExplainString();
+        var identString = ident.getText();
         int setType = CType.T_int;
         boolean isConst = false;
         if(identString.startsWith("i_")) {

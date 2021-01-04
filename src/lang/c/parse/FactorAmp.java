@@ -7,7 +7,8 @@ import lang.c.*;
 
 public class FactorAmp extends CParseRule {
     // factorAmp ::= AMD number
-    private CParseRule num;
+    //->factorAmp ::= AMP (number | primary)
+    private CParseRule numPrim;
     public FactorAmp (CParseContext pcx) { }
 
 
@@ -23,20 +24,32 @@ public class FactorAmp extends CParseRule {
 
 
         if (tk.getType() == CToken.TK_NUM) {
-            num = new Number(pcx);
+            numPrim = new Number(pcx);
+        } else if (tk.getType() == CToken.TK_IDENT) {
+            numPrim = new Primary(pcx);
         } else {
-            pcx.fatalError(tk.toExplainString() + "&の後ろはNumberです");
+            pcx.fatalError(tk.toExplainString() + "&の後ろはNumberかPrimaryです");
         }
-        num.parse(pcx);
+        numPrim.parse(pcx);
     }
 
     public void semanticCheck(CParseContext pcx) throws FatalErrorException {   // 意味のチェック
-        if(num != null){
-            num.semanticCheck(pcx);
-            if (num.getCType().getType() != CToken.TK_NUM) {
-                pcx.fatalError(num + " はアドレス値として不適です");
+        if(numPrim != null){
+            if (numPrim instanceof Primary) {
+                if (((Primary) numPrim).isPrimayMult) {
+                    pcx.fatalError("&の後ろに*は付けられません");
+                }
             }
-            this.setCType(CType.getCType(CType.T_pint));    //*int
+            numPrim.semanticCheck(pcx);
+            int setType = switch(numPrim.getCType().getType()){
+                case CType.T_int        -> CType.T_pint;
+                case CType.T_int_arr    -> CType.T_pint_arr;
+                default -> {
+                    pcx.fatalError("ポインタに&はつけられません");
+                    yield CType.T_err;
+                }
+            };
+            this.setCType(CType.getCType(setType));
             this.setConstant(true);
         }
     }
@@ -44,7 +57,7 @@ public class FactorAmp extends CParseRule {
     public void codeGen(CParseContext pcx) throws FatalErrorException {         //code generator
         PrintStream o = pcx.getIOContext().getOutStream();
         o.println(";;; factorAmp starts");
-        num.codeGen(pcx);
+        numPrim.codeGen(pcx);
         o.println(";;; factorAmp completes");
     }
 }

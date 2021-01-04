@@ -30,9 +30,8 @@ public class Variable extends CParseRule{
     public void semanticCheck(CParseContext pcx) throws FatalErrorException {
         if(ident != null){
             ident.semanticCheck(pcx);
-            var isIntArr = (ident.getCType().getType() == CType.T_int_arr);
-            var isPIntArr = (ident.getCType().getType() == CType.T_pint_arr);
-            /*
+            var isIntArr = ident.getCType().isCType(CType.T_int_arr);
+            var isPIntArr = ident.getCType().isCType(CType.T_pint_arr);
             if(array != null){
                 if(!isIntArr && !isPIntArr){
                     pcx.fatalError("Identの型が配列型ではないため不適切です");
@@ -49,19 +48,24 @@ public class Variable extends CParseRule{
                 }
                 this.setCType(ident.getCType());
             }
-             */
-            if(isIntArr||isPIntArr){
-                if(array == null) {
+            /*
+            if(array == null) {
+                if(isIntArr||isPIntArr){
                     pcx.fatalError("Arrayにインデックスが指定されていません");
                 }
-                array.semanticCheck(pcx);
                 if(isIntArr){
                     this.setCType(CType.getCType(CType.T_int));
                 }else if(isPIntArr){
                     this.setCType(CType.getCType(CType.T_pint));
                 }
+            }else{
+                if(!isIntArr && !isPIntArr){
+                    pcx.fatalError("配列型ではないのに[]が続くのは不適切です");
+                }
+                array.semanticCheck(pcx);
             }
-            this.setCType(ident.getCType());
+
+             */
             this.setConstant(ident.isConstant());
         }
     }

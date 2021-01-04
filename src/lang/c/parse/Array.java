@@ -31,12 +31,12 @@ public class Array extends CParseRule{
     public void semanticCheck(CParseContext pcx) throws FatalErrorException {
         if(expression != null){
             expression.semanticCheck(pcx);
-            if(expression.getCType().getType() != CType.T_int){
+            if(!expression.getCType().isCType(CType.T_int)){
                 pcx.fatalError("配列のインデックスはintである必要があります");
             }
+            this.setCType(expression.getCType());
+            this.setConstant(expression.isConstant());
         }
-        this.setCType(expression.getCType());
-        this.setConstant(expression.isConstant());
     }
 
     @Override

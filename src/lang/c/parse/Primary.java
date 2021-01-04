@@ -10,7 +10,7 @@ import java.io.PrintStream;
 public class Primary extends CParseRule {
     //primary ::= primaryMult | variable
     private CParseRule nextParseRule;
-    private boolean isPrimayMult;
+    boolean isPrimayMult;
 
     public Primary(CParseContext pcx){}
 
