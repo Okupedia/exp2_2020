@@ -62,7 +62,7 @@ public class Term extends CParseRule {
 				var leftType = left.getCType().getType();
 				var rightType = right.getCType().getType();
 				if((leftType & rightType) != 1){// どちらもポインタじゃないことを確認
-					pcx.fatalError("ポインタを含む乗除算はできません");
+					pcx.fatalError("ポインタや配列の乗除算はできません");
 				}
 				this.setCType(CType.getCType(CType.T_int));
 

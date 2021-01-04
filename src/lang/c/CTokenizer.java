@@ -104,9 +104,13 @@ public class CTokenizer extends Tokenizer<CToken, CParseContext> {
 						case '*' -> Status.MULT;
 						case '(' -> Status.LPAR;
 						case ')' -> Status.RPAR;
+						case '[' -> Status.LBRA;
+						case ']' -> Status.RBRA;
 						default -> {
 							if (ch >= '1' && ch <= '9') {
 								yield Status.DECIMAL;
+							} else if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_') {
+								yield Status.IDENT;
 							} else {			// ヘンな文字を読んだ
 								yield Status.ILL;
 							}
@@ -127,13 +131,12 @@ public class CTokenizer extends Tokenizer<CToken, CParseContext> {
 					if (Character.isDigit(ch)) {
 						text.append(ch);
 					} else {
+						backChar(ch);	// 数を表さない文字は戻す（読まなかったことにする）
+
 						if(Integer.decode(text.toString()) > INT_MAX) {
 							state = Status.ILL;
-						}else if(ch > '9'){
-							text.append(ch);
-							state = Status.ILL;
 						} else {
-							backChar(ch);	// 数を表さない文字は戻す（読まなかったことにする）
+							//backChar(ch);	// 数を表さない文字は戻す（読まなかったことにする）
 							tk = new CToken(CToken.TK_NUM, lineNo, startCol, text.toString());
 							accept = true;
 						}
@@ -278,6 +281,25 @@ public class CTokenizer extends Tokenizer<CToken, CParseContext> {
 					tk = new CToken(CToken.TK_RPAR, lineNo, startCol, ")");
 					accept = true;
 					break;
+				case IDENT:
+					ch = readChar();
+					if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')
+							|| (ch >= '0' && ch <= '9') || ch == '_') {
+						text.append(ch);
+					} else {
+						backChar(ch);
+						tk = new CToken(CToken.TK_IDENT, lineNo, startCol, text.toString());
+						accept = true;
+					}
+					break;
+				case LBRA:
+					tk = new CToken(CToken.TK_LBRA, lineNo, startCol, "[");
+					accept = true;
+					break;
+				case RBRA:
+					tk = new CToken(CToken.TK_RBRA, lineNo, startCol, "]");
+					accept = true;
+					break;
 			}
 		}
 		return tk;
@@ -301,7 +323,10 @@ public class CTokenizer extends Tokenizer<CToken, CParseContext> {
 		HEXADECIMAL,	//16進数
 		AND,
 		MULT,
-		LPAR,			//左括弧
-		RPAR			//右括弧
+		LPAR,			//(
+		RPAR,			//)
+		IDENT,			//IDENT
+		LBRA,			//[
+		RBRA			//]
 	}
 }

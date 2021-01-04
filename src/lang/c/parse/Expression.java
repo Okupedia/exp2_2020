@@ -93,10 +93,17 @@ class ExpressionAdd extends CParseRule {
 		T_pint	= 2;		// int*
 		 */
 		final int s[][] = {
+				/*
 		//(rt)		err				int          	pint		  //(lt)
 				{	CType.T_err,	CType.T_err,	CType.T_err	},//err
 				{	CType.T_err,	CType.T_int,	CType.T_pint},//int
 				{	CType.T_err,	CType.T_pint,	CType.T_err},//pint
+				 */
+				{CType.T_err, CType.T_err, CType.T_err, CType.T_err, CType.T_err},     // T_err
+				{CType.T_err, CType.T_int, CType.T_pint, CType.T_err, CType.T_err},   // T_int
+				{CType.T_err, CType.T_pint, CType.T_err, CType.T_err, CType.T_err},  // T_pint
+				{CType.T_err, CType.T_err, CType.T_err, CType.T_err, CType.T_err},   // T_int_arr
+				{CType.T_err, CType.T_err, CType.T_err, CType.T_err, CType.T_err}   // T_pint_arr
 		};
 		if (left != null && right != null) {
 			left.semanticCheck(pcx);
@@ -151,10 +158,19 @@ class ExpressionSub extends CParseRule {
 	public void semanticCheck(CParseContext pcx) throws FatalErrorException {
 		// 引き算の型計算規則
 		final int s[][] = {
+				/*
 		//(rt)		err				int          	pint		  //(lr)
 				{	CType.T_err,	CType.T_err,	CType.T_err	},//err
 				{	CType.T_err,	CType.T_int,	CType.T_err	},//int
 				{	CType.T_err,	CType.T_pint,	CType.T_int	},//pint
+
+				 */
+				//		T_err			T_int       T_pint          T_int_arr       T_pint_arr
+				{CType.T_err, CType.T_err, CType.T_err, CType.T_err, CType.T_err},     // T_err
+				{CType.T_err, CType.T_int, CType.T_err, CType.T_err, CType.T_err},   // T_int
+				{CType.T_err, CType.T_pint, CType.T_int, CType.T_err, CType.T_err},  // T_pint
+				{CType.T_err, CType.T_err, CType.T_err, CType.T_err, CType.T_err},   // T_int_arr
+				{CType.T_err, CType.T_err, CType.T_err, CType.T_err, CType.T_err}   // T_pint_arr
 		};
 		if (left != null && right != null) {
 			left.semanticCheck(pcx);
