@@ -38,7 +38,7 @@ public class StatementAssign extends CParseRule{
     }
 
     @Override
-    public void codeGen(CParseContext pcx) throws FatalErrorException {
+    public void semanticCheck(CParseContext pcx) throws FatalErrorException {
         if(primary != null){
             primary.semanticCheck(pcx);
         }
@@ -51,13 +51,14 @@ public class StatementAssign extends CParseRule{
             pcx.fatalError(String.format("左辺の型[%s]と右辺の型[%s]が一致しません\n",
                     leftType.toString(), rightType.toString()));
         }
+        System.out.println("this is constant or not :" + this.isConstant());
         if (primary.isConstant()) {
-            pcx.fatalError("primaryがconstant(定数)なので値を代入することはできません");
+            pcx.fatalError("左辺がconstant(定数)なので値を代入することはできません");
         }
     }
 
     @Override
-    public void semanticCheck(CParseContext pcx) throws FatalErrorException {
+    public void codeGen(CParseContext pcx) throws FatalErrorException {
         final var printStream = pcx.getIOContext().getOutStream();
         printStream.println(";;; StatementAssign starts");
         if (primary != null) {
