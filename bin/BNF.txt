@@ -1,22 +1,17 @@
-[ver 03]
+[ver 04]
 
 program ::= expression EOF
 expression ::= term{expressionAdd | expressionSub}
 expressionAdd ::= PLUS term
 expressionSub ::= MINUS term
+
 term ::= factor {termMult | termDiv}
 termMult ::= MULT factor
 termDiv ::= Div factor
+
 factor ::= plusFactor | minusFactor | unsignedFactor
 plusFactor ::= PLUS unsignedFactor
 minusFactor ::= MINUS unsignedFactor
-unsignedFactor ::= factorAmp | number | LPAR expression RPAR
-factorAmp ::= AMP number
-number ::= NUM
-
------------------------------------------------------------------------
-[change]
-
 unsignedFactor ::= factorAmp | number | LPAR expression RPAR | addressToValue
 addressToValue ::= primary
 factorAmp ::= AMP (number | primary)
@@ -25,11 +20,22 @@ primaryMult ::= MULT variable
 variable ::= ident [array]
 array ::= LBRA expression RBRA
 ident ::= IDENT
+number ::= NUM
 
 -----------------------------------------------------------------------
-[ver 04]
+[change]
 
-program ::= expression EOF
+program ::= { statement } EOF
+statement   ::= statemntAssign
+pstatementAssign    ::= primary ASSIGN expression SEMI
+
+-----------------------------------------------------------------------
+[ver 05]
+
+program ::= { statement } EOF
+statement   ::= statemntAssign
+pstatementAssign    ::= primary ASSIGN expression SEMI
+
 expression ::= term{expressionAdd | expressionSub}
 expressionAdd ::= PLUS term
 expressionSub ::= MINUS term

@@ -106,6 +106,8 @@ public class CTokenizer extends Tokenizer<CToken, CParseContext> {
 						case ')' -> Status.RPAR;
 						case '[' -> Status.LBRA;
 						case ']' -> Status.RBRA;
+						case '=' -> Status.ASSIGN;
+						case ';' -> Status.SEMI;
 						default -> {
 							if (ch >= '1' && ch <= '9') {
 								yield Status.DECIMAL;
@@ -300,6 +302,14 @@ public class CTokenizer extends Tokenizer<CToken, CParseContext> {
 					tk = new CToken(CToken.TK_RBRA, lineNo, startCol, "]");
 					accept = true;
 					break;
+				case ASSIGN:
+					tk = new CToken(CToken.TK_ASSIGN, lineNo, startCol, "=");
+					accept = true;
+					break;
+				case SEMI:
+					tk = new CToken(CToken.TK_SEMI, lineNo, startCol, ";");
+					accept = true;
+					break;
 			}
 		}
 		return tk;
@@ -327,6 +337,8 @@ public class CTokenizer extends Tokenizer<CToken, CParseContext> {
 		RPAR,			//)
 		IDENT,			//IDENT
 		LBRA,			//[
-		RBRA			//]
+		RBRA,			//]
+		ASSIGN,			//=
+		SEMI			//;
 	}
 }
