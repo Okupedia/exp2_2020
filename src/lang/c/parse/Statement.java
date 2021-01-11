@@ -5,26 +5,43 @@ import lang.c.CParseContext;
 import lang.c.CParseRule;
 import lang.c.CToken;
 
+import java.util.ArrayList;
+
 public class Statement extends CParseRule{
     //statement   ::= statementAssign
-    CParseRule statementAssign;
+    //->statement   ::= statementAssign | statementIf | statementWhile | statementBlock | statementOutput | statementInput
+    CParseRule statement;
 
     public Statement(CParseContext pcx){}
 
     public static boolean isFirst(CToken tk){
-        return StatementAssign.isFirst(tk);
+        return StatementAssign.isFirst(tk)
+                || StatementIf.isFirst(tk)
+                || StatementWhile.isFirst(tk)
+                || StatementBlock.isFirst(tk)
+                || StatementOutput.isFirst(tk)
+                || StatementInput.isFirst(tk);
     }
 
     @Override
     public void parse(CParseContext pcx) throws FatalErrorException {
-        statementAssign = new StatementAssign(pcx);
-        statementAssign.parse(pcx);
+        statement = switch(pcx.getTokenizer().getCurrentToken(pcx).getType()){
+            case CToken.TK_IF -> new StatementIf(pcx);
+            case CToken.TK_WHILE-> new StatementWhile(pcx);
+            case CToken.TK_LCBRA-> new StatementBlock(pcx);
+            case CToken.TK_OUTPUT-> new StatementOutput(pcx);
+            case CToken.TK_INPUT-> new StatementInput(pcx);
+            default -> {
+                yield new StatementAssign(pcx);
+            }
+        };
+        statement.parse(pcx);
     }
 
     @Override
     public void semanticCheck(CParseContext pcx) throws FatalErrorException {
-        if(statementAssign != null){
-            statementAssign.semanticCheck(pcx);
+        if(statement != null){
+            statement.semanticCheck(pcx);
         }
     }
 
@@ -32,9 +49,288 @@ public class Statement extends CParseRule{
     public void codeGen(CParseContext pcx) throws FatalErrorException {
         final var printStream = pcx.getIOContext().getOutStream();
         printStream.println(";;; Statement starts");
-        if (statementAssign != null) {
-            statementAssign.codeGen(pcx);
+        if (statement != null) {
+            statement.codeGen(pcx);
         }
         printStream.println(";;; Statement completes");
+    }
+}
+
+class StatementAssign extends CParseRule{
+    //statementAssign    ::= primary ASSIGN expression SEMI
+    CParseRule primary, expression;
+
+    public StatementAssign(CParseContext pcx){}
+
+    public static boolean isFirst(CToken tk){
+        return Primary.isFirst(tk);
+    }
+
+    @Override
+    public void parse(CParseContext pcx) throws FatalErrorException {
+        var tokenizer = pcx.getTokenizer();
+        //primary
+        primary = new Primary(pcx);
+        primary.parse(pcx);
+        // ASSIGN
+        if(tokenizer.getCurrentToken(pcx).getType() != CToken.TK_ASSIGN){
+            pcx.fatalError(tokenizer.getCurrentToken(pcx).toExplainString() + "primaryの後には=が必要です");
+        }
+        //expression
+        tokenizer.getNextToken(pcx);
+        expression = new Expression(pcx);
+        expression.parse(pcx);
+        //SEMI
+        if(tokenizer.getCurrentToken(pcx).getType() != CToken.TK_SEMI){
+            pcx.fatalError(tokenizer.getCurrentToken(pcx).toExplainString() +";が足りません");
+        }
+
+        tokenizer.getNextToken(pcx);
+    }
+
+    @Override
+    public void semanticCheck(CParseContext pcx) throws FatalErrorException {
+        if(primary != null){
+            primary.semanticCheck(pcx);
+        }
+        if(expression != null){
+            expression.semanticCheck(pcx);
+        }
+        final var leftType = primary.getCType();
+        final var rightType = expression.getCType();
+        if (leftType.getType() != rightType.getType()) {
+            pcx.fatalError(String.format("左辺の型[%s]と右辺の型[%s]が一致しません\n",
+                    leftType.toString(), rightType.toString()));
+        }
+        System.out.println("this is constant or not :" + this.isConstant());
+        if (primary.isConstant()) {
+            pcx.fatalError("左辺がconstant(定数)なので値を代入することはできません");
+        }
+    }
+
+    @Override
+    public void codeGen(CParseContext pcx) throws FatalErrorException {
+        final var printStream = pcx.getIOContext().getOutStream();
+        printStream.println(";;; StatementAssign starts");
+        if (primary != null) {
+            primary.codeGen(pcx);
+        }
+        if (expression != null) {
+            expression.codeGen(pcx);
+        }
+        printStream.println("\tMOV\t-(R6), R1\t; StatementAssign: 右辺の値を取り出す");
+        printStream.println("\tMOV\t-(R6), R0\t; StatementAssign: 左辺のアドレスを取り出す");
+        printStream.println("\tMOV\t   R1, (R0)\t; StatementAssign: 変数に値を代入する");
+        printStream.println(";;; StatementAssign completes");
+    }
+}
+
+class StatementIf extends CParseRule{
+    //statementIf     ::= IF LPAR condition RPAR statement [ELSE statement]
+    CParseRule condition, statement, elseStatement;
+    public StatementIf(CParseContext pcx){}
+
+    public static boolean isFirst(CToken tk){
+        return tk.getType() == CToken.TK_IF;
+    }
+
+    @Override
+    public void parse(CParseContext pcx) throws FatalErrorException {
+        var tokenizer = pcx.getTokenizer();
+        var token = tokenizer.getNextToken(pcx); //ifの続きを見る
+
+        if(token.getType() != CToken.TK_LPAR){
+            pcx.fatalError(token.toExplainString( )+ "ifの後ろには(を続ける必要があります");
+        }
+
+        token = tokenizer.getNextToken(pcx);
+        condition = new Condition(pcx);
+        condition.parse(pcx);
+
+        token = tokenizer.getCurrentToken(pcx);
+        if(token.getType() != CToken.TK_RPAR){
+            pcx.fatalError(token.toExplainString() + "()が閉じていません");
+        }
+
+        token = tokenizer.getNextToken(pcx);
+        statement = new Statement(pcx);
+        statement.parse(pcx);
+
+        token = tokenizer.getCurrentToken(pcx);
+        if(token.getType() == CToken.TK_ELSE){
+            token = tokenizer.getNextToken(pcx);
+            if(!Statement.isFirst(token)){
+                pcx.fatalError(token.toExplainString() + "elseがあるので続きが必要です");
+            }
+            elseStatement = new Statement(pcx);
+            elseStatement.parse(pcx);
+        }
+
+    }
+
+    @Override
+    public void semanticCheck(CParseContext pcx) throws FatalErrorException {
+
+    }
+
+    @Override
+    public void codeGen(CParseContext pcx) throws FatalErrorException {
+
+    }
+}
+
+class StatementWhile extends CParseRule{
+    //statementWhile  ::= WHILE LPAR condition RPAR statement
+    CParseRule condition, statement;
+
+    public StatementWhile(CParseContext pcx){}
+
+    public static boolean isFirst(CToken tk){
+        return tk.getType() == CToken.TK_WHILE;
+    }
+
+    @Override
+    public void parse(CParseContext pcx) throws FatalErrorException {
+        var tokenizer = pcx.getTokenizer();
+        var token = tokenizer.getNextToken(pcx); //whileの続きを見る
+
+        if(token.getType() != CToken.TK_LPAR){
+            pcx.fatalError(token.toExplainString() + "ifの後ろには(を続ける必要があります");
+        }
+
+        token = tokenizer.getNextToken(pcx);
+        condition = new Condition(pcx);
+        condition.parse(pcx);
+
+        token = tokenizer.getCurrentToken(pcx);
+        if(token.getType() != CToken.TK_RPAR){
+            pcx.fatalError(token.toExplainString() + "()が閉じていません");
+        }
+
+        token = tokenizer.getNextToken(pcx);
+        statement = new Statement(pcx);
+        statement.parse(pcx);
+    }
+
+    @Override
+    public void semanticCheck(CParseContext pcx) throws FatalErrorException {
+
+    }
+
+    @Override
+    public void codeGen(CParseContext pcx) throws FatalErrorException {
+
+    }
+}
+
+class StatementOutput extends CParseRule{
+    //statementOutput ::= OUTPUT expression SEMI
+    CParseRule expression;
+
+    public StatementOutput(CParseContext pcx){}
+
+    public static boolean isFirst(CToken tk){
+        return tk.getType() == CToken.TK_OUTPUT;
+    }
+
+    @Override
+    public void parse(CParseContext pcx) throws FatalErrorException {
+        var tokenizer = pcx.getTokenizer();
+        var token = tokenizer.getNextToken(pcx); //outputの続きを見る
+
+        expression = new Expression(pcx);
+        expression.parse(pcx);
+
+        token = tokenizer.getCurrentToken(pcx);
+        if(token.getType() != CToken.TK_SEMI){
+            pcx.fatalError(token.toExplainString() + ";がありません");
+        }
+        tokenizer.getNextToken(pcx);
+    }
+
+    @Override
+    public void semanticCheck(CParseContext pcx) throws FatalErrorException {
+
+    }
+
+    @Override
+    public void codeGen(CParseContext pcx) throws FatalErrorException {
+
+    }
+}
+
+class StatementInput extends CParseRule{
+    //statementInput  ::= INPUT primary SEMI
+    CParseRule primary;
+
+    public StatementInput(CParseContext pcx){}
+
+    public static boolean isFirst(CToken tk){
+        return tk.getType() == CToken.TK_INPUT;
+    }
+
+    @Override
+    public void parse(CParseContext pcx) throws FatalErrorException {
+        var tokenizer = pcx.getTokenizer();
+        var token = tokenizer.getNextToken(pcx); //inputの続きを見る
+
+        primary = new Primary(pcx);
+        primary.parse(pcx);
+
+        token = tokenizer.getCurrentToken(pcx);
+        if(token.getType() != CToken.TK_SEMI){
+            pcx.fatalError(token.toExplainString() + ";がありません");
+        }
+        tokenizer.getNextToken(pcx);
+    }
+
+    @Override
+    public void semanticCheck(CParseContext pcx) throws FatalErrorException {
+
+    }
+
+    @Override
+    public void codeGen(CParseContext pcx) throws FatalErrorException {
+
+    }
+}
+
+class StatementBlock extends CParseRule{
+    //statementBlock  ::= LCBRA {statement} RCBRA
+    ArrayList<CParseRule> statementList = new ArrayList<>();
+
+    public StatementBlock(CParseContext pcx){}
+
+    public static boolean isFirst(CToken tk){
+        return tk.getType() == CToken.TK_LCBRA;
+    }
+
+    @Override
+    public void parse(CParseContext pcx) throws FatalErrorException {
+        var tokenizer = pcx.getTokenizer();
+        var token = tokenizer.getNextToken(pcx); //{続きを見る
+
+        while(Statement.isFirst(token)){
+            var statement = new Statement(pcx);
+            statement.parse(pcx);
+            statementList.add(statement);
+            token = tokenizer.getCurrentToken(pcx);
+        }
+
+        token = tokenizer.getCurrentToken(pcx);
+        if(token.getType() != CToken.TK_RCBRA){
+            pcx.fatalError(token.toExplainString() + "{}が閉じていません");
+        }
+        tokenizer.getNextToken(pcx);
+    }
+
+    @Override
+    public void semanticCheck(CParseContext pcx) throws FatalErrorException {
+
+    }
+
+    @Override
+    public void codeGen(CParseContext pcx) throws FatalErrorException {
+
     }
 }

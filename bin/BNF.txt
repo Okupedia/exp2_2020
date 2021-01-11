@@ -1,8 +1,8 @@
-[ver 05]
+[ver 06]
 
 program ::= { statement } EOF
-statement   ::= statemntAssign
-pstatementAssign    ::= primary ASSIGN expression SEMI
+statement   ::= statementAssign
+statementAssign    ::= primary ASSIGN expression SEMI
 
 expression ::= term{expressionAdd | expressionSub}
 expressionAdd ::= PLUS term
@@ -24,8 +24,6 @@ variable ::= ident [array]
 array ::= LBRA expression RBRA
 ident ::= IDENT
 number ::= NUM
------------------------------------------------------------------------
-[change]
 
 condition ::= TRUE | FALSE | expression(conditionLT | conditionLE | conditionGT
                                       | conditionGE | conditionEQ | conditionNE)
@@ -37,5 +35,62 @@ conditionEQ ::= EQ expression //==
 conditionNE ::= NE expression //!=
 
 -----------------------------------------------------------------------
-[ver 06]
+[change]
 
+statement   ::= statementAssign | statementIf | statementWhile | statementBlock | statementOutput | statementInput
+
+statementAssign ::= primary ASSIGN expression SEMI
+statementIf     ::= IF LPAR condition RPAR statement [ELSE statement]
+statementWhile  ::= WHILE LPAR condition RPAR statement
+statementOutput ::= OUTPUT expression SEMI
+statementInput  ::= INPUT primary SEMI
+statementBlock  ::= LCBRA {statement} RCBRA
+
+-----------------------------------------------------------------------
+[ver 07]
+
+SEMI -> ;
+LPAR -> ( RPAR -> )
+LBRA -> [ RBRA -> ]
+LCBRA -> { RCBRA -> }
+
+program ::= { statement } EOF
+
+statement   ::= statementAssign | statementIf | statementWhile | statementBlock | statementOutput | statementInput
+
+statementAssign ::= primary ASSIGN expression SEMI
+statementIf     ::= IF LPAR condition RPAR statement [ELSE statement]
+statementWhile  ::= WHILE LPAR condition RPAR statement
+statementOutput ::= OUTPUT expression SEMI
+statementInput  ::= INPUT primary SEMI
+statementBlock  ::= LCBRA {statement} RCBRA
+
+expression ::= term{expressionAdd | expressionSub}
+expressionAdd ::= PLUS term
+expressionSub ::= MINUS term
+
+term ::= factor {termMult | termDiv}
+termMult ::= MULT factor
+termDiv ::= Div factor
+
+factor ::= plusFactor | minusFactor | unsignedFactor
+plusFactor ::= PLUS unsignedFactor
+minusFactor ::= MINUS unsignedFactor
+unsignedFactor ::= factorAmp | number | LPAR expression RPAR | addressToValue
+addressToValue ::= primary
+factorAmp ::= AMP (number | primary)
+primary ::= primaryMult | variable
+primaryMult ::= MULT variable
+variable ::= ident [array]
+array ::= LBRA expression RBRA
+ident ::= IDENT
+number ::= NUM
+
+condition ::= TRUE | FALSE | expression(conditionLT | conditionLE | conditionGT
+                                      | conditionGE | conditionEQ | conditionNE)
+conditionLT ::= LT expression //<
+conditionLE ::= LE expression //<=
+conditionGT ::= GT expression //>
+conditionGE ::= GE expression //>=
+conditionEQ ::= EQ expression //==
+conditionNE ::= NE expression //!=

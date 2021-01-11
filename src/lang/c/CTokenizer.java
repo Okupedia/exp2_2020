@@ -111,6 +111,8 @@ public class CTokenizer extends Tokenizer<CToken, CParseContext> {
 						case '<' -> Status.LT;
 						case '>' -> Status.GT;
 						case '!' -> Status.NE;
+						case '{' -> Status.LCBRA;
+						case '}' -> Status.RCBRA;
 						default -> {
 							if (ch >= '1' && ch <= '9') {
 								yield Status.DECIMAL;
@@ -313,6 +315,8 @@ public class CTokenizer extends Tokenizer<CToken, CParseContext> {
 					tk = new CToken(CToken.TK_ASSIGN, lineNo, startCol, "=");
 					if(ch == '='){
 						tk = new CToken(CToken.TK_EQ, lineNo, startCol, "==");
+					}else{
+						backChar(ch);
 					}
 					accept = true;
 					break;
@@ -350,6 +354,14 @@ public class CTokenizer extends Tokenizer<CToken, CParseContext> {
 						state = Status.ILL;
 					}
 					break;
+				case LCBRA:
+					tk = new CToken(CToken.TK_LCBRA, lineNo, startCol, "{");
+					accept = true;
+					break;
+				case RCBRA:
+					tk = new CToken(CToken.TK_RCBRA, lineNo, startCol, "}");
+					accept = true;
+					break;
 			}
 		}
 		return tk;
@@ -382,6 +394,8 @@ public class CTokenizer extends Tokenizer<CToken, CParseContext> {
 		SEMI,			//;
 		LT,				//<
 		GT,				//>
-		NE				//! (!=を期待)
+		NE,				//! (!=を期待)
+		LCBRA,			//{
+		RCBRA			//}
 	}
 }

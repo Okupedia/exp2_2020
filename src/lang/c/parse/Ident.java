@@ -22,7 +22,7 @@ public class Ident extends CParseRule {
     public void parse(CParseContext pcx) throws FatalErrorException {
         var token = pcx.getTokenizer().getCurrentToken(pcx);
         if(token.getType() != CToken.TK_IDENT){
-            pcx.fatalError("型がIDENTではありません");
+            pcx.fatalError(token.toExplainString() + "型がIDENTではありません");
         }
         ident = token;  //ここで綴りを保存しておく
         pcx.getTokenizer().getNextToken(pcx);
