@@ -9,8 +9,7 @@ import java.util.ArrayList;
 import java.io.PrintStream;
 
 public class Statement extends CParseRule{
-    //statement   ::= statementAssign
-    //->statement   ::= statementAssign | statementIf | statementWhile | statementBlock | statementOutput | statementInput
+    //statement   ::= statementAssign | statementIf | statementWhile | statementBlock | statementOutput | statementInput
     CParseRule statement;
 
     public Statement(CParseContext pcx){}
@@ -104,7 +103,7 @@ class StatementAssign extends CParseRule{
                     leftType.toString(), rightType.toString()));
         }
         if (primary.isConstant()) {
-            pcx.fatalError("左辺がconstant(定数)なので値を代入することはできません");
+            pcx.fatalError(pcx.getTokenizer().getCurrentToken(pcx).toExplainString() + "左辺がconstant(定数)なので値を代入することはできません");
         }
     }
 

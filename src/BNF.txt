@@ -49,15 +49,18 @@ statementBlock  ::= LCBRA {statement} RCBRA
 -----------------------------------------------------------------------
 [ver 07]
 
-SEMI -> ;
-LPAR -> ( RPAR -> )
-LBRA -> [ RBRA -> ]
-LCBRA -> { RCBRA -> }
+SEMI    -> ;
+assign  -> =
+LPAR    -> (    RPAR    -> )
+LBRA    -> [    RBRA    -> ]
+LCBRA   -> {    RCBRA   -> }
+LT      -> <    LE      -> <=
+GT      -> >    GE      -> >=
+EQ      -> ==   NE      -> !=
 
 program ::= { statement } EOF
 
 statement   ::= statementAssign | statementIf | statementWhile | statementBlock | statementOutput | statementInput
-
 statementAssign ::= primary ASSIGN expression SEMI
 statementIf     ::= IF LPAR condition RPAR statement [ELSE statement]
 statementWhile  ::= WHILE LPAR condition RPAR statement
@@ -77,14 +80,16 @@ factor ::= plusFactor | minusFactor | unsignedFactor
 plusFactor ::= PLUS unsignedFactor
 minusFactor ::= MINUS unsignedFactor
 unsignedFactor ::= factorAmp | number | LPAR expression RPAR | addressToValue
-addressToValue ::= primary
+
 factorAmp ::= AMP (number | primary)
+number ::= NUM
+
+addressToValue ::= primary
 primary ::= primaryMult | variable
 primaryMult ::= MULT variable
 variable ::= ident [array]
 array ::= LBRA expression RBRA
 ident ::= IDENT
-number ::= NUM
 
 condition ::= TRUE | FALSE | expression(conditionLT | conditionLE | conditionGT
                                       | conditionGE | conditionEQ | conditionNE)
