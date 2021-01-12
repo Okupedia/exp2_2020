@@ -6,6 +6,7 @@ import lang.c.CParseRule;
 import lang.c.CToken;
 
 import java.util.ArrayList;
+import java.io.PrintStream;
 
 public class Statement extends CParseRule{
     //statement   ::= statementAssign
@@ -102,7 +103,6 @@ class StatementAssign extends CParseRule{
             pcx.fatalError(String.format("左辺の型[%s]と右辺の型[%s]が一致しません\n",
                     leftType.toString(), rightType.toString()));
         }
-        System.out.println("this is constant or not :" + this.isConstant());
         if (primary.isConstant()) {
             pcx.fatalError("左辺がconstant(定数)なので値を代入することはできません");
         }
@@ -170,12 +170,39 @@ class StatementIf extends CParseRule{
 
     @Override
     public void semanticCheck(CParseContext pcx) throws FatalErrorException {
-
+        if(condition != null){
+            condition.semanticCheck(pcx);
+        }
+        if(statement != null){
+            statement.semanticCheck(pcx);
+        }
+        if(elseStatement != null){
+            elseStatement.semanticCheck(pcx);
+        }
     }
 
     @Override
     public void codeGen(CParseContext pcx) throws FatalErrorException {
-
+        PrintStream o = pcx.getIOContext().getOutStream();
+        final var seq = pcx.getSeqId();
+        o.println(";;; StatementsIf Starts");
+        if (condition != null) {
+            condition.codeGen(pcx);
+        }
+        o.println("\tMOV\t-(R6), R0\t;StatementIF: スタックからconditionの結果を持ってくる");
+        o.println("\tBRZ endIf" + seq + "\t;;; StatementIF:trueなら1なので Z=0の時は以下のtrueの処理をスキップする");
+        if (statement != null) {
+            statement.codeGen(pcx);
+        }
+        if (elseStatement != null) {
+            o.println("\tJMP endElse" + seq + "\t;;; StatementIF:trueの処理が終了したのでfalseの処理をスキップする");
+            o.println("endIf" + seq + ": \t\t;StatementIF: ラベル生成(trueの処理が終了 falseの処理が始まる)");
+            elseStatement.codeGen(pcx);
+            o.println("endElse" + seq + ": \t\t;StatementIF: ラベル生成(falseの処理が終了)");
+        } else {
+            o.println("endIf" + seq + ": \t\t;StatementIF: ラベル生成(trueの処理が終了)");
+        }
+        o.println(";;; StatementsIf Completes");
     }
 }
 
@@ -214,12 +241,31 @@ class StatementWhile extends CParseRule{
 
     @Override
     public void semanticCheck(CParseContext pcx) throws FatalErrorException {
-
+        if(condition != null){
+            condition.semanticCheck(pcx);
+        }
+        if(statement != null){
+            statement.semanticCheck(pcx);
+        }
     }
 
     @Override
     public void codeGen(CParseContext pcx) throws FatalErrorException {
-
+        PrintStream o = pcx.getIOContext().getOutStream();
+        final var seq = pcx.getSeqId();
+        o.println(";;; StatementWhile Starts");
+        o.println("while" + seq + ":\t;StatementWhile: ラベル生成(whileの処理が終わった後に戻ってくるためのラベル)");
+        if (condition != null) {
+            condition.codeGen(pcx);
+        }
+        o.println("\tMOV\t-(R6), R0\t;StatementWhile: スタックからconditionの結果を持ってくる");
+        o.println("BRZ whileEnd" + seq + "\t;;; StatementWhile:z=0(false)の時はwhile内の処理をスキップ");
+        if (statement != null) {
+            statement.codeGen(pcx);
+        }
+        o.println("\tJMP while" + seq + ":\t;StatementWhile:一通り処理を実施したらもう一度条件判定からやり直す");
+        o.println("whileEnd" + seq + ":\t;StatementWhile: ラベル生成(while文の終了地点)");
+        o.println(";;; StatementWhile Completes");
     }
 }
 
@@ -250,12 +296,19 @@ class StatementOutput extends CParseRule{
 
     @Override
     public void semanticCheck(CParseContext pcx) throws FatalErrorException {
-
+        if(expression != null){
+            expression.semanticCheck(pcx);
+        }
     }
 
     @Override
     public void codeGen(CParseContext pcx) throws FatalErrorException {
-
+        PrintStream o = pcx.getIOContext().getOutStream();
+        if (expression != null) {
+            expression.codeGen(pcx);
+            o.println("\tMOV\t#0xFFE0, R3\t; StatementIn:I/Oアドレスをレジスタにセット");
+            o.println("\tMOV\t-(R6), (R3)\t; StatementIn: Expressionの値を書き込み");
+        }
     }
 }
 
@@ -286,12 +339,23 @@ class StatementInput extends CParseRule{
 
     @Override
     public void semanticCheck(CParseContext pcx) throws FatalErrorException {
-
+        if(primary != null){
+            primary.semanticCheck(pcx);
+            if(primary.isConstant()){
+                pcx.fatalError("定数に対してのinputは不正です");
+            }
+        }
     }
 
     @Override
     public void codeGen(CParseContext pcx) throws FatalErrorException {
-
+        PrintStream o = pcx.getIOContext().getOutStream();
+        if (primary != null) {
+            primary.codeGen(pcx);
+            o.println("\tMOV\t-(R6), R0; StatementIn: 変数のアドレスをスタックからpop");
+            o.println("\tMOV\t#0xFFE0, R3\t; StatementIn:");
+            o.println("\tMOV\t(R3), (R0)\t; StatementIn: Primaryの値を変数に書き込み");
+        }
     }
 }
 
@@ -326,11 +390,15 @@ class StatementBlock extends CParseRule{
 
     @Override
     public void semanticCheck(CParseContext pcx) throws FatalErrorException {
-
+        for(var statement : statementList){
+           statement.semanticCheck(pcx);
+        }
     }
 
     @Override
     public void codeGen(CParseContext pcx) throws FatalErrorException {
-
+        for(var statement : statementList){
+            statement.codeGen(pcx);
+        }
     }
 }
