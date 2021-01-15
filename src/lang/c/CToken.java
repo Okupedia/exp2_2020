@@ -30,7 +30,10 @@ public class CToken extends SimpleToken {
 	public static final int TK_OUTPUT		= 25;	// output
 	public static final int TK_INPUT		= 26;	// input
 	public static final int TK_LCBRA		= 27;	// {
-	public static final int TK_RCBRA		= 28;	// }
+	public static final int TK_RCBRA		= 28;	//  }
+	public static final int TK_NOT			= 29;	// !
+	public static final int TK_DAND			= 30;	// &&
+	public static final int TK_OR			= 31;	// ||
 
 	public CToken(int type, int lineNo, int colNo, String s) {
 		super(type, lineNo, colNo, s);

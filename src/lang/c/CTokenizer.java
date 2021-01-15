@@ -113,6 +113,7 @@ public class CTokenizer extends Tokenizer<CToken, CParseContext> {
 						case '!' -> Status.NE;
 						case '{' -> Status.LCBRA;
 						case '}' -> Status.RCBRA;
+						case '|' -> Status.OR;
 						default -> {
 							if (ch >= '1' && ch <= '9') {
 								yield Status.DECIMAL;
@@ -272,7 +273,13 @@ public class CTokenizer extends Tokenizer<CToken, CParseContext> {
 					}
 					break;
 				case AND:
+					ch = readChar();
 					tk = new CToken(CToken.TK_AND, lineNo, startCol, "&");
+					if(ch == '&'){
+						tk = new CToken(CToken.TK_DAND, lineNo, startCol, "&&");
+					}else{
+						backChar(ch);
+					}
 					accept = true;
 					break;
 				case MULT:				//　 掛け算
@@ -346,13 +353,17 @@ public class CTokenizer extends Tokenizer<CToken, CParseContext> {
 					break;
 				case NE:
 					ch = readChar();
+					tk = new CToken(CToken.TK_NOT, lineNo, startCol, "!");
 					if(ch == '='){
 						tk = new CToken(CToken.TK_NE, lineNo, startCol, "!=");
-						accept = true;
 					}else{
+						/*
 						text.append(ch);
 						state = Status.ILL;
+						 */
+						backChar(ch);
 					}
+					accept = true;
 					break;
 				case LCBRA:
 					tk = new CToken(CToken.TK_LCBRA, lineNo, startCol, "{");
@@ -361,6 +372,16 @@ public class CTokenizer extends Tokenizer<CToken, CParseContext> {
 				case RCBRA:
 					tk = new CToken(CToken.TK_RCBRA, lineNo, startCol, "}");
 					accept = true;
+					break;
+				case OR:
+					ch = readChar();
+					if(ch == '|'){
+						tk = new CToken(CToken.TK_OR, lineNo, startCol, "||");
+						accept = true;
+					}else{
+						text.append(ch);
+						state = Status.ILL;
+					}
 					break;
 			}
 		}
@@ -394,8 +415,9 @@ public class CTokenizer extends Tokenizer<CToken, CParseContext> {
 		SEMI,			//;
 		LT,				//<
 		GT,				//>
-		NE,				//! (!=を期待)
+		NE,				//! (NOT もしくは NE)
 		LCBRA,			//{
-		RCBRA			//}
+		RCBRA,			//}
+		OR,				//||
 	}
 }

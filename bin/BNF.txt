@@ -1,8 +1,24 @@
-[ver 06]
+
+[ver 07]
+
+SEMI    -> ;
+assign  -> =
+LPAR    -> (    RPAR    -> )
+LBRA    -> [    RBRA    -> ]
+LCBRA   -> {    RCBRA   -> }
+LT      -> <    LE      -> <=
+GT      -> >    GE      -> >=
+EQ      -> ==   NE      -> !=
 
 program ::= { statement } EOF
-statement   ::= statementAssign
-statementAssign    ::= primary ASSIGN expression SEMI
+
+statement   ::= statementAssign | statementIf | statementWhile | statementBlock | statementOutput | statementInput
+statementAssign ::= primary ASSIGN expression SEMI
+statementIf     ::= IF LPAR condition RPAR statement [ELSE statement]
+statementWhile  ::= WHILE LPAR condition RPAR statement
+statementOutput ::= OUTPUT expression SEMI
+statementInput  ::= INPUT primary SEMI
+statementBlock  ::= LCBRA {statement} RCBRA
 
 expression ::= term{expressionAdd | expressionSub}
 expressionAdd ::= PLUS term
@@ -16,14 +32,16 @@ factor ::= plusFactor | minusFactor | unsignedFactor
 plusFactor ::= PLUS unsignedFactor
 minusFactor ::= MINUS unsignedFactor
 unsignedFactor ::= factorAmp | number | LPAR expression RPAR | addressToValue
-addressToValue ::= primary
+
 factorAmp ::= AMP (number | primary)
+number ::= NUM
+
+addressToValue ::= primary
 primary ::= primaryMult | variable
 primaryMult ::= MULT variable
 variable ::= ident [array]
 array ::= LBRA expression RBRA
 ident ::= IDENT
-number ::= NUM
 
 condition ::= TRUE | FALSE | expression(conditionLT | conditionLE | conditionGT
                                       | conditionGE | conditionEQ | conditionNE)
@@ -33,31 +51,42 @@ conditionGT ::= GT expression //>
 conditionGE ::= GE expression //>=
 conditionEQ ::= EQ expression //==
 conditionNE ::= NE expression //!=
-
 -----------------------------------------------------------------------
 [change]
 
-statement   ::= statementAssign | statementIf | statementWhile | statementBlock | statementOutput | statementInput
+NOT     -> !
+AND     -> &&
+OR      -> ||
 
-statementAssign ::= primary ASSIGN expression SEMI
-statementIf     ::= IF LPAR condition RPAR statement [ELSE statement]
-statementWhile  ::= WHILE LPAR condition RPAR statement
-statementOutput ::= OUTPUT expression SEMI
-statementInput  ::= INPUT primary SEMI
-statementBlock  ::= LCBRA {statement} RCBRA
+condition ::= TRUE | FALSE | expression(conditionLT | conditionLE | conditionGT
+                                      | conditionGE | conditionEQ | conditionNE)
+                                      {(NOT | AND | OR) condition}
+conditionLT ::= LT expression //<
+conditionLE ::= LE expression //<=
+conditionGT ::= GT expression //>
+conditionGE ::= GE expression //>=
+conditionEQ ::= EQ expression //==
+conditionNE ::= NE expression //!=
+
 
 -----------------------------------------------------------------------
-[ver 07]
+[ver 08]
 
-SEMI -> ;
-LPAR -> ( RPAR -> )
-LBRA -> [ RBRA -> ]
-LCBRA -> { RCBRA -> }
+SEMI    -> ;
+assign  -> =
+LPAR    -> (    RPAR    -> )
+LBRA    -> [    RBRA    -> ]
+LCBRA   -> {    RCBRA   -> }
+LT      -> <    LE      -> <=
+GT      -> >    GE      -> >=
+EQ      -> ==   NE      -> !=
+NOT     -> !
+AND     -> &&
+OR      -> ||
 
 program ::= { statement } EOF
 
 statement   ::= statementAssign | statementIf | statementWhile | statementBlock | statementOutput | statementInput
-
 statementAssign ::= primary ASSIGN expression SEMI
 statementIf     ::= IF LPAR condition RPAR statement [ELSE statement]
 statementWhile  ::= WHILE LPAR condition RPAR statement
@@ -77,14 +106,16 @@ factor ::= plusFactor | minusFactor | unsignedFactor
 plusFactor ::= PLUS unsignedFactor
 minusFactor ::= MINUS unsignedFactor
 unsignedFactor ::= factorAmp | number | LPAR expression RPAR | addressToValue
-addressToValue ::= primary
+
 factorAmp ::= AMP (number | primary)
+number ::= NUM
+
+addressToValue ::= primary
 primary ::= primaryMult | variable
 primaryMult ::= MULT variable
 variable ::= ident [array]
 array ::= LBRA expression RBRA
 ident ::= IDENT
-number ::= NUM
 
 condition ::= TRUE | FALSE | expression(conditionLT | conditionLE | conditionGT
                                       | conditionGE | conditionEQ | conditionNE)
