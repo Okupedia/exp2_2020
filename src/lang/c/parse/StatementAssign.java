@@ -51,7 +51,7 @@ public class StatementAssign extends CParseRule{
             pcx.fatalError(String.format("左辺の型[%s]と右辺の型[%s]が一致しません\n",
                     leftType.toString(), rightType.toString()));
         }
-        System.out.println("this is constant or not :" + this.isConstant());
+        System.out.println("this is constant or not :" + primary.isConstant());
         if (primary.isConstant()) {
             pcx.fatalError("左辺がconstant(定数)なので値を代入することはできません");
         }
