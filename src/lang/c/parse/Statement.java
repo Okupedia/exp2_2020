@@ -196,7 +196,7 @@ class StatementIf extends CParseRule{
         }
         if (elseStatement != null) {
             o.println("\tJMP endElse" + seq + "\t;;; StatementIF:trueの処理が終了したのでfalseの処理をスキップする");
-            o.println("endIf" + seq + ": \t\t;StatementIF: ラベル生成(trueの処理が終了 falseの処理が始まる)");
+            o.println("endIf" + seq + ": \t\t;StatementIF: ラベル生成(falseの処理が始まる)");
             elseStatement.codeGen(pcx);
             o.println("endElse" + seq + ": \t\t;StatementIF: ラベル生成(falseの処理が終了)");
         } else {
