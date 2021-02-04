@@ -73,9 +73,9 @@ public class Condition extends CParseRule {
         if(trueOrFalse != null){
             if(trueOrFalse){
                 // MOV #0x0001 (R6)+
-                o.println("\tMOV\\t#0x0001, (R6)+\t; Condition: trueとして1を積む");
+                o.println("\tMOV\t#0x0001, (R6)+\t; Condition: trueとして1を積む");
             }else{
-                o.println("\tMOV\\t#0x0000, (R6)+\t; Condition: falseとして0を積む");
+                o.println("\tMOV\t#0x0000, (R6)+\t; Condition: falseとして0を積む");
             }
         }
         o.println(";;; condition completes");
