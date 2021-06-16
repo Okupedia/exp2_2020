@@ -1,4 +1,3 @@
-
 [ver 07]
 
 SEMI    -> ;
@@ -60,7 +59,7 @@ OR      -> ||
 
 condition ::= TRUE | FALSE | expression(conditionLT | conditionLE | conditionGT
                                       | conditionGE | conditionEQ | conditionNE)
-                                      {(NOT | AND | OR) condition}
+                                      [(AND | OR) condition]
 conditionLT ::= LT expression //<
 conditionLE ::= LE expression //<=
 conditionGT ::= GT expression //>
